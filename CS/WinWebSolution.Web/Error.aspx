@@ -1,13 +1,36 @@
-<%@ Page Language="c#" AutoEventWireup="false" Inherits="ErrorPage" EnableViewState="false"
+﻿<%@ Page Language="c#" AutoEventWireup="false" Inherits="ErrorPage" EnableViewState="false"
     ValidateRequest="false" CodeBehind="Error.aspx.cs" %>
-
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html>
 <head id="Head1" runat="server">
     <title>Error</title>
     <meta http-equiv="Expires" content="0" />
+    <style type="text/css">
+        .ClosePopupBT
+        {
+            display:none;
+            top:20px;
+            right:20px;
+            position:absolute;
+            padding:9px 21px 8px 22px;
+            border-radius:3px;
+            background-color:white;
+            border:1px solid #c6c6c6;
+            font-size:14px;
+            color:#2C86D3;
+        }
+        input[type="button"]:hover
+        {
+          background-color:#f0f0f0;
+          cursor: pointer;
+        }
+        .PopupNewStyle .ClosePopupBT
+        {
+            display:block;
+        }
+    </style>
 </head>
-<body class="Dialog Error">
+<body class="Dialog Error" onload="javascript:ClientPageLoad()">
     <div id="PageContent" class="PageContent DialogPageContent">
         <table id="formTable" cellpadding="0" cellspacing="0" width="100%">
             <tr>
@@ -26,6 +49,7 @@
                                 </td>
                             </tr>
                         </table>
+                        <input type="button" class="ClosePopupBT" id="ClosePopupBT" onclick="Back();" value="Close"/>
                     </div>
                     <table class="DialogContent Content" border="0" cellpadding="0" cellspacing="0" width="100%">
                         <tr>
@@ -37,18 +61,14 @@
                                             <h2 id="FormCaption">
                                                 <asp:Literal ID="ErrorTitleLiteral" runat="server" Text="Application Error" /></h2>
                                             <asp:Panel runat="server" ID="ErrorPanel" Width="100%">
-                                                <p class="StaticText">
-                                                    <asp:PlaceHolder ID="ReportResult" runat="server">Your report was sent. Thank you.<br />
+                                                <p class="StaticText" id="MainErrorText">
+                                                    <asp:PlaceHolder ID="ApologizeMessage" runat="server">
+                                                        We are currently unable to serve your request.<br />
+                                                    You could go&nbsp;<asp:HyperLink ID="HyperLink1" runat="server" NavigateUrl="javascript:Back();">back</asp:HyperLink>&nbsp;and
+                                                    try again or  
+                                                    <asp:LinkButton ID="NavigateToStart" runat="server" OnClick="NavigateToStart_Click">restart the application</asp:LinkButton>.
                                                     </asp:PlaceHolder>
-                                                    <asp:PlaceHolder ID="ApologizeMessage" runat="server">We are currently unable to serve
-                                                        your request:&nbsp;<asp:HyperLink ID="RequestUrl" runat="server">RequestUrl</asp:HyperLink>.<br />
-                                                        We apologize, but an error occurred and your request could not be completed.<br />
-                                                    </asp:PlaceHolder>
-                                                    You could go&nbsp;<asp:HyperLink ID="HyperLink1" runat="server" NavigateUrl="javascript:history.go(-1)">back</asp:HyperLink>&nbsp;and
-                                                    try again
-                                                    <asp:Literal ID="LiteralReturn" runat="server" Text=", or return to the "></asp:Literal>
-                                                    <asp:HyperLink ID="HyperLinkReturn" runat="server">previous page</asp:HyperLink>
-                                                    , or retry your request:&nbsp;<asp:HyperLink ID="RequestUrl2" runat="server">RequestUrl</asp:HyperLink>.</p>
+                                                </p>
                                                 <asp:Panel ID="Details" runat="server" Width="100%">
                                                     <a style="text-decoration: underline; cursor: hand;" id="ShowErrorDetails" onclick="javascript:ShowDetails();">
                                                         Show Error details</a>
@@ -93,9 +113,16 @@
                 </td>
             </tr>
         </table>
-
         <script type="text/javascript">
 	<!--
+            function Back() {
+                if (window != window.top) {
+                    window.top.closeActiveXafPopupWindow();
+                } else {
+                    history.go(-1);
+                }
+                return false;
+            }
             function ShowDetails() {
                 document.getElementById('DetailsContent').style.display = 'block';
                 document.getElementById('ShowErrorDetails').style.display = 'none';
@@ -106,9 +133,17 @@
                 document.getElementById('ShowErrorDetails').style.display = 'block';
                 return false;
             }
+            function ClientPageLoad() {
+                var errorText = null;
+                if (window != window.top) {
+                    errorText = document.getElementById('MainErrorText');
+                }
+                if (errorText) {
+                    errorText.style.display = 'none';
+                }
+            }
     //-->	    
         </script>
-
     </div>
 </body>
 </html>

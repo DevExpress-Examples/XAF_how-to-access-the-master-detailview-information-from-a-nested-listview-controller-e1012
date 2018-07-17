@@ -1,32 +1,61 @@
-using DevExpress.ExpressApp.Xpo;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.ComponentModel;
-using DevExpress.ExpressApp.Win;
-using DevExpress.ExpressApp.Updating;
 using DevExpress.ExpressApp;
+using DevExpress.ExpressApp.Win;
+using System.Collections.Generic;
+using DevExpress.ExpressApp.Updating;
+using DevExpress.ExpressApp.Xpo;
 
 namespace WinWebSolution.Win {
+    // For more typical usage scenarios, be sure to check out https://documentation.devexpress.com/eXpressAppFramework/DevExpressExpressAppWinWinApplicationMembersTopicAll.aspx
     public partial class WinWebSolutionWindowsFormsApplication : WinApplication {
-        protected override void CreateDefaultObjectSpaceProvider(CreateCustomObjectSpaceProviderEventArgs args) {
-            args.ObjectSpaceProvider = new XPObjectSpaceProvider(args.ConnectionString, args.Connection);
+        #region Default XAF configuration options (https://www.devexpress.com/kb=T501418)
+        static WinWebSolutionWindowsFormsApplication() {
+            DevExpress.Persistent.Base.PasswordCryptographer.EnableRfc2898 = true;
+            DevExpress.Persistent.Base.PasswordCryptographer.SupportLegacySha512 = false;
         }
+        private void InitializeDefaults() {
+            LinkNewObjectToParentImmediately = false;
+            OptimizedControllersCreation = true;
+            UseLightStyle = true;
+        }
+        #endregion
         public WinWebSolutionWindowsFormsApplication() {
             InitializeComponent();
+			InitializeDefaults();
         }
-
+        protected override void CreateDefaultObjectSpaceProvider(CreateCustomObjectSpaceProviderEventArgs args) {
+            args.ObjectSpaceProviders.Add(new XPObjectSpaceProvider(XPObjectSpaceProvider.GetDataStoreProvider(args.ConnectionString, args.Connection, true), false));
+            args.ObjectSpaceProviders.Add(new NonPersistentObjectSpaceProvider(TypesInfo, null));
+        }
+        private void WinWebSolutionWindowsFormsApplication_CustomizeLanguagesList(object sender, CustomizeLanguagesListEventArgs e) {
+            string userLanguageName = System.Threading.Thread.CurrentThread.CurrentUICulture.Name;
+            if(userLanguageName != "en-US" && e.Languages.IndexOf(userLanguageName) == -1) {
+                e.Languages.Add(userLanguageName);
+            }
+        }
         private void WinWebSolutionWindowsFormsApplication_DatabaseVersionMismatch(object sender, DevExpress.ExpressApp.DatabaseVersionMismatchEventArgs e) {
-            if (System.Diagnostics.Debugger.IsAttached) {
+#if EASYTEST
+            e.Updater.Update();
+            e.Handled = true;
+#else
+            if(System.Diagnostics.Debugger.IsAttached) {
                 e.Updater.Update();
                 e.Handled = true;
-            } else {
-                throw new InvalidOperationException(
-                    "The application cannot connect to the specified database, because the latter doesn't exist or its version is older than that of the application.\r\n" +
-                    "The automatical update is disabled, because the application was started without debugging.\r\n" +
-                    "You should start the application under Visual Studio, or modify the " +
-                    "source code of the 'DatabaseVersionMismatch' event handler to enable automatic database update, " +
-                    "or manually create a database with the help of the 'DBUpdater' tool.");
             }
+            else {
+				string message = "The application cannot connect to the specified database, " +
+					"because the database doesn't exist, its version is older " +
+					"than that of the application or its schema does not match " +
+					"the ORM data model structure. To avoid this error, use one " +
+					"of the solutions from the https://www.devexpress.com/kb=T367835 KB Article.";
+
+				if(e.CompatibilityError != null && e.CompatibilityError.Exception != null) {
+					message += "\r\n\r\nInner exception: " + e.CompatibilityError.Exception.Message;
+				}
+				throw new InvalidOperationException(message);
+            }
+#endif
         }
     }
 }
